@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.Scanner;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.locks.ReentrantLock;
 
 /*
@@ -22,7 +23,7 @@ public class SockMatching {
     private List<Robot> Robots;
     private MatchingMachine matchingMachine;
     private ShelfManager shelfManager;
-    private List<ReentrantLock> Locks;
+    private List<Semaphore> SemLocks;
     private Random rand = new Random();
 
     public static void main(String[] args) throws IOException, InterruptedException {
@@ -59,10 +60,10 @@ public class SockMatching {
     }
 
     private void createSockLocks() {
-        Locks = new ArrayList<>();
+        SemLocks = new ArrayList<>();
         for (int i = 0; i < Socks.size(); i++) {
-            ReentrantLock lock = new ReentrantLock();
-            Locks.add(lock);
+            Semaphore SemLock = new Semaphore(1);
+            SemLocks.add(SemLock);
         }
     }
 
@@ -105,13 +106,13 @@ public class SockMatching {
         if (flag) {
             return -1;
         }
-        boolean success = Locks.get(n).tryLock();
+        boolean success = SemLocks.get(n).tryAcquire();
         if (success && n < Socks.size()) {
             synchronized (Socks) {
                 sock = Socks.get(n);
                 Socks.remove(n);
             }
-            Locks.get(n).unlock();
+            SemLocks.get(n).release();
             return sock;
         } else {
             return PickSock();
