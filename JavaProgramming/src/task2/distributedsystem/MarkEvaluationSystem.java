@@ -24,13 +24,6 @@ public class MarkEvaluationSystem {
 
         Data = new HashMap<>();
         InputBuffer = new ArrayList<>();
-
-        ArrayList<String> temp = new ArrayList<>();
-        temp.add("Abhishek");
-        temp.add("agoyal");
-        temp.add("100");
-        temp.add("CC");
-        Data.put("002", temp);
     }
 
     private void UpdateStudentMarks() {
@@ -215,7 +208,7 @@ public class MarkEvaluationSystem {
                     markEvaluationSystem.writeFinalData();
 
                     /*Todo
-                    * Generate the remaning files - Sorted by name and sorted by roll number */
+                     * Generate the remaning files - Sorted by name and sorted by roll number */
                     return;
                 case 1:
                     markEvaluationSystem.UpdateStudentMarks();
