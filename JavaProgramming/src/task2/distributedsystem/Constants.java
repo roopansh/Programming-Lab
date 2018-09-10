@@ -1,9 +1,9 @@
 package task2.distributedsystem;
 
-public class Constants {
-    public static final String CC = "CC";
-    public static final String TA1 = "TA1";
-    public static final String TA2 = "TA2";
-    public static final String STUD_INFO = "/home/cse/IdeaProjects/Programming-Lab/JavaProgramming/src/task2/distributedsystem/stud_info.txt";
-
+class Constants {
+    static final String CC = "CC";
+    static final String TA1 = "TA1";
+    static final String TA2 = "TA2";
+    static final String STUD_INFO = ".\\resources\\task2\\stud_info.txt";
+    static final String STUD_INFO_SORTED_BY_ROLL_NUMBER = ".\\resources\\task2\\stud_info_roll_number.txt";
 }

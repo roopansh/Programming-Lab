@@ -13,21 +13,17 @@ public class Teacher extends Thread {
         setPriority(priority);
         InputBuffer = new ArrayList<>();
         Synchronize = false;
-        start();
     }
 
     @Override
     public void run() {
-        while (true) {
-            if (InputBuffer.size() > 0) {
-                if (Synchronize) {
-                    markEvaluationSystem.updateWithSynchronisation(InputBuffer.get(0).get(0), Integer.parseInt(InputBuffer.get(0).get(1)), getName());
-                    InputBuffer.remove(0);
-                } else {
-                    markEvaluationSystem.updateWithoutSynchronisation(InputBuffer.get(0).get(0), Integer.parseInt(InputBuffer.get(0).get(1)), getName());
-                    InputBuffer.remove(0);
-                }
+        while (InputBuffer.size() > 0) {
+            if (Synchronize) {
+                markEvaluationSystem.updateWithSynchronisation(InputBuffer.get(0).get(0), Integer.parseInt(InputBuffer.get(0).get(1)), getName());
+            } else {
+                markEvaluationSystem.updateWithoutSynchronisation(InputBuffer.get(0).get(0), Integer.parseInt(InputBuffer.get(0).get(1)), getName());
             }
+            InputBuffer.remove(0);
         }
     }
 
