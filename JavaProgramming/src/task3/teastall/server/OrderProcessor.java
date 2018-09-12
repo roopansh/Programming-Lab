@@ -3,6 +3,7 @@ package task3.teastall.server;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.time.LocalDateTime;
 import java.util.Map;
 
 public class OrderProcessor extends Thread {
@@ -11,13 +12,15 @@ public class OrderProcessor extends Thread {
     private int delay;
     private boolean available;
     private Socket socket;
+    private LocalDateTime orderTime;
 
-    OrderProcessor(Server server, Map<String, Integer> order, Socket socket) {
+    OrderProcessor(Server server, Map<String, Integer> order, LocalDateTime orderTime, Socket socket) {
         this.order = order;
         this.server = server;
         delay = -1;
         available = true;
         this.socket = socket;
+        this.orderTime = orderTime;
     }
 
     @Override
@@ -52,7 +55,10 @@ public class OrderProcessor extends Thread {
         return available;
     }
 
-    void sendResult() {
+    LocalDateTime sendResult(LocalDateTime timeStamp) {
+        if (orderTime.isAfter(timeStamp)) {
+            timeStamp = orderTime;
+        }
         DataOutputStream dataOutputStream = null;
         try {
             dataOutputStream = new DataOutputStream(socket.getOutputStream());
@@ -60,9 +66,10 @@ public class OrderProcessor extends Thread {
             e.printStackTrace();
         }
         if (isAvailable()) {
+            timeStamp = timeStamp.plusMinutes(getDelay());
             try {
                 if (dataOutputStream != null) {
-                    dataOutputStream.writeUTF("The order will be delivered in " + String.valueOf(getDelay()) + " minutes.");
+                    dataOutputStream.writeUTF("The order will be delivered at " + timeStamp.toString() + ".");
                 }
             } catch (IOException e) {
                 e.printStackTrace();
@@ -80,5 +87,6 @@ public class OrderProcessor extends Thread {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        return timeStamp;
     }
 }

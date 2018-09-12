@@ -110,7 +110,8 @@ public class Client {
         });
 
         orderButton.addActionListener(actionEvent -> {
-            sendOrder();
+            String message = sendOrder();
+            JOptionPane.showMessageDialog(frame, message);
         });
 
         orderButton.setEnabled(false);
@@ -131,7 +132,7 @@ public class Client {
         frame.setVisible(true);//making the frame visible
     }
 
-    private void sendOrder() {
+    private String sendOrder() {
         // establish a connection
         try {
             socket = new Socket(Constants.SERVER_ADDRESS, Constants.SERVER_PORT);
@@ -183,6 +184,7 @@ public class Client {
         } catch (IOException e) {
             System.out.println(e);
         }
+        return line;
     }
 
     public static void main(String[] args) {
