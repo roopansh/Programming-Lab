@@ -1,16 +1,19 @@
 package task3.teastall.server;
 
+import java.util.concurrent.CountDownLatch;
+
 public class ItemProcessor extends Thread {
     private String item;
     private int quantity;
     private Server server;
     private int delay;
-
-    ItemProcessor(Server server, String item, int quantity) {
+    private CountDownLatch latch;
+    ItemProcessor(Server server, String item, int quantity, CountDownLatch latch) {
         super();
         this.item = item;
         this.server = server;
         this.quantity = quantity;
+        this.latch = latch;
     }
 
     @Override
@@ -21,6 +24,7 @@ public class ItemProcessor extends Thread {
             delay = this.server.getItemDelay().getOrDefault(item, -1);
             delay = delay * quantity + 2;
         }
+        latch.countDown();
     }
 
     int getDelay() {

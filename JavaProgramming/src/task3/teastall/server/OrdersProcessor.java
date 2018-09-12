@@ -1,5 +1,7 @@
 package task3.teastall.server;
 
+import task3.teastall.Constants;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,12 +22,13 @@ public class OrdersProcessor extends Thread {
     public void run() {
         while (true) {
             if (orders.size() > 0) {
-                while (orders.size() > 0) {
+                int count = 0;
+                while (orders.size() > 0 && count < Constants.ORDERS_THRESHHOLD) {
                     OrderProcessor order = orders.get(0);
                     orders.remove(0);
                     processingOrders.add(order);
                     order.start();
-
+                    count++;
                 }
                 while (processingOrders.size() > 0) {
                     OrderProcessor order = processingOrders.get(0);

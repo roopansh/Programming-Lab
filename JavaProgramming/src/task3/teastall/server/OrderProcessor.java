@@ -1,10 +1,13 @@
 package task3.teastall.server;
 
+import task3.teastall.Constants;
+
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 
 public class OrderProcessor extends Thread {
     private Map<String, Integer> order;
@@ -28,22 +31,25 @@ public class OrderProcessor extends Thread {
         // Create thread for all the items and join on them
         ItemProcessor[] itemProcessors = new ItemProcessor[order.size()];
         int count = 0;
+        CountDownLatch latch = new CountDownLatch(order.size());
+
         for (Map.Entry<String, Integer> entry : order.entrySet()) {
-            itemProcessors[count] = new ItemProcessor(server, entry.getKey(), entry.getValue());
+            itemProcessors[count] = new ItemProcessor(server, entry.getKey(), entry.getValue(), latch);
             itemProcessors[count].start();
             count++;
         }
-        for (ItemProcessor itemProcessor : itemProcessors) {
-            try {
-                itemProcessor.join();
-                int d = itemProcessor.getDelay();
 
-                // check if the order can be fulfilled or not
-                if (d < 0) available = false;
-                if (delay < d) delay = d;
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        for (ItemProcessor itemProcessor : itemProcessors) {
+            int d = itemProcessor.getDelay();
+            // check if the order can be fulfilled or not
+            if (d < 0) available = false;
+            if (delay < d) delay = d;
         }
     }
 
@@ -69,7 +75,7 @@ public class OrderProcessor extends Thread {
             timeStamp = timeStamp.plusMinutes(getDelay());
             try {
                 if (dataOutputStream != null) {
-                    dataOutputStream.writeUTF("The order will be delivered at " + timeStamp.toString() + ".");
+                    dataOutputStream.writeUTF("The order will be delivered by " + timeStamp.format(Constants.DATE_TIME_FORMATTER));
                 }
             } catch (IOException e) {
                 e.printStackTrace();

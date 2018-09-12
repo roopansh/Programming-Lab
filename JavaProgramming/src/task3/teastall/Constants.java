@@ -1,5 +1,6 @@
 package task3.teastall;
 
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -9,6 +10,8 @@ public class Constants {
     public static final int SERVER_PORT = 5000;
     public static final String GET_AVAILABLE_LIST = "GET_AVAILABLE_LIST";
     public static final String PLACE_ORDER = "PLACE_ORDER";
+    public static final int ORDERS_THRESHHOLD = 10;
+    public static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm 'on'9 cccc dd,LLLL ");
 
     public static Map<String, Integer> getInitialItems() {
         Map<String, Integer> items = new HashMap<>();
