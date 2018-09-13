@@ -16,32 +16,37 @@ public class Server extends Thread {
     private Map<String, Integer> Items; // Item, Stock
     private Map<String, Integer> ItemDelay; // item, total delay
     private OrdersProcessor ordersProcessor;
+    private Map<String, ItemsProcessor> itemsProcessorMap;
 
     // constructor with port
     private Server() {
         Items = Constants.getInitialItems();
         ItemDelay = Constants.getInitialItemsDelay();
+        itemsProcessorMap = new HashMap<>();
         ordersProcessor = new OrdersProcessor();
+        for (String item : Items.keySet()) {
+            itemsProcessorMap.put(item, new ItemsProcessor(item));
+        }
         generateGui();
         start();
     }
 
     private void generateGui() {
-        JFrame f=new JFrame();
-        JTextArea ta=new JTextArea(200,200);
+        JFrame f = new JFrame();
+        JTextArea ta = new JTextArea(200, 200);
         JLabel itemLabel = new JLabel("Select the item to order");
-        JPanel p1=new JPanel();
+        JPanel p1 = new JPanel();
         p1.add(itemLabel);
         p1.add(ta);
-        JPanel p2=new JPanel();
-        JPanel p3=new JPanel();
-        JTabbedPane tp=new JTabbedPane();
-        tp.setBounds(50,50,200,200);
-        tp.add("Orders",p1);
-        tp.add("Stock",p2);
-        tp.add("help",p3);
+        JPanel p2 = new JPanel();
+        JPanel p3 = new JPanel();
+        JTabbedPane tp = new JTabbedPane();
+        tp.setBounds(50, 50, 200, 200);
+        tp.add("Orders", p1);
+        tp.add("Stock", p2);
+        tp.add("help", p3);
         f.add(tp);
-        f.setSize(400,400);
+        f.setSize(400, 400);
         f.setLayout(null);
         f.setVisible(true);
     }
@@ -49,6 +54,9 @@ public class Server extends Thread {
     @Override
     public void run() {
         ordersProcessor.start();
+        for(ItemsProcessor itemsProcessor : itemsProcessorMap.values()){
+            itemsProcessor.start();
+        }
 
         // starts server and waits for a connection
         try {
@@ -99,7 +107,6 @@ public class Server extends Thread {
                     }
                     OrderProcessor orderProcessor = new OrderProcessor(this, order, LocalDateTime.now(), socket);
                     ordersProcessor.orders.add(orderProcessor);
-//                    ThreadPool.execute(ordersProcessor);
                 }
             }
         } catch (IOException i) {
@@ -113,6 +120,10 @@ public class Server extends Thread {
 
     Map<String, Integer> getItems() {
         return Items;
+    }
+
+    public Map<String, ItemsProcessor> getItemsProcessorMap() {
+        return itemsProcessorMap;
     }
 
     public static void main(String[] args) {
