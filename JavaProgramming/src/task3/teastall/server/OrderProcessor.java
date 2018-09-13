@@ -28,14 +28,20 @@ public class OrderProcessor extends Thread {
 
     @Override
     public void run() {
-        // Create thread for all the items and join on them
+        // Create thread for all the items and wait on them
         ItemProcessor[] itemProcessors = new ItemProcessor[order.size()];
         int count = 0;
         CountDownLatch latch = new CountDownLatch(order.size());
 
         for (Map.Entry<String, Integer> entry : order.entrySet()) {
             itemProcessors[count] = new ItemProcessor(server, entry.getKey(), entry.getValue(), latch);
-            itemProcessors[count].start();
+            // aquire lock the item list and then add to the queueu
+
+            ItemsProcessor itemsProcessor = server.getItemsProcessorMap().get(entry.getKey());
+            itemsProcessor.queueLock.lock();
+            itemsProcessor.itemOrders.add(itemProcessors[count]);
+            itemsProcessor.queueLock.unlock();
+
             count++;
         }
 
