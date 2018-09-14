@@ -18,16 +18,24 @@ public class Constants {
         items.put("Coffee", 100);
         items.put("Tea", 100);
         items.put("Snacks", 100);
-        items.put("Chips", 100);
+        items.put("Cookies", 100);
         return items;
     }
 
+    public static Map<String,Integer> getItemsPrice(){
+        Map<String,Integer> items = new HashMap<>();
+        items.put("Coffee", 6);
+        items.put("Tea", 5);
+        items.put("Snacks", 15);
+        items.put("Cookies", 10);
+        return items;
+    }
     public static Map<String, Integer> getInitialItemsDelay() {
         Map<String, Integer> items = new HashMap<>();
         items.put("Coffee", 1);
         items.put("Tea", 1);
         items.put("Snacks", 0);
-        items.put("Chips", 0);
+        items.put("Cookies", 0);
         return items;
     }
 }
