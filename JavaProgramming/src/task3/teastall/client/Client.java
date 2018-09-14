@@ -225,7 +225,6 @@ public class Client {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        System.out.println(line);
         try {
             socket.close();
         } catch (IOException e) {

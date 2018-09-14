@@ -11,7 +11,7 @@ public class Constants {
     public static final String GET_AVAILABLE_LIST = "GET_AVAILABLE_LIST";
     public static final String PLACE_ORDER = "PLACE_ORDER";
     public static final int ORDERS_THRESHOLD = 10;
-    public static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm cccc dd,LLLL ");
+    public static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("EEEE, MMM d, yyyy HH:mm:ss a");
     public static final int DELIVERY_TIME = 2;
     public static final String COFFEE = "Coffee";
     public static final String TEA = "Tea";

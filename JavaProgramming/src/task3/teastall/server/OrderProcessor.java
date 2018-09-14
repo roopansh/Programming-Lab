@@ -86,7 +86,7 @@ public class OrderProcessor extends Thread {
             timeStamp = timeStamp.plusMinutes(getDelay());
             try {
                 if (dataOutputStream != null) {
-                    dataOutputStream.writeUTF("The order will be delivered by " + timeStamp.format(Constants.DATE_TIME_FORMATTER));
+                    dataOutputStream.writeUTF("The order will be delivered by " + Constants.DATE_TIME_FORMATTER.format(timeStamp));
                 }
             } catch (IOException e) {
                 e.printStackTrace();

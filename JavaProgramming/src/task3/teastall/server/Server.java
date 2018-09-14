@@ -12,10 +12,9 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.time.ZoneId;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 
@@ -49,11 +48,32 @@ public class Server extends Thread {
         JPanel p1 = new JPanel(new BorderLayout());
         JPanel p2 = new JPanel(new BorderLayout());
         JPanel p3 = new JPanel(new BorderLayout());
+        JLabel fromDateLabel = new JLabel(" From ");
+        JLabel toDateLabel = new JLabel(" To ");
+        Calendar cal = Calendar.getInstance();
+        cal.add(Calendar.DATE, -1);
+        Date from = cal.getTime();
+        cal.add(Calendar.DATE, 2);
+        Date to = cal.getTime();
+        cal.add(Calendar.YEAR, -10);
+        Date startDate = cal.getTime();
+        cal.add(Calendar.YEAR, 20);
+        Date endDate = cal.getTime();
+        SpinnerModel fromModel = new SpinnerDateModel(from, startDate, endDate, Calendar.YEAR);
+        SpinnerModel toModel = new SpinnerDateModel(to, startDate, endDate, Calendar.YEAR);
+        JSpinner fromDateInput = new JSpinner(fromModel);
+        JSpinner toDateInput = new JSpinner(toModel);
+        JPanel datePanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        datePanel.add(fromDateLabel);
+        datePanel.add(fromDateInput);
+        datePanel.add(toDateLabel);
+        datePanel.add(toDateInput);
+
         JButton refresh = new JButton("Refresh"); //creating instance of JButton
         DefaultTableModel orderDetailsTable = new DefaultTableModel(new String[]{"S.No.", "Name", "Date", "Item", "Qty", "Rate", "Price"}, 0);
         DefaultTableModel stockDetailsTable = new DefaultTableModel(new String[]{"S.No.", "Item", "Stock Available"}, 0);
         DefaultTableModel purchaseListTable = new DefaultTableModel(new String[]{"S.No.", "Item"}, 0);
-        
+
         JTable orderTable = new JTable(orderDetailsTable);
         JTable stockTable = new JTable(stockDetailsTable);
         JTable purchaseTable = new JTable(purchaseListTable);
@@ -62,8 +82,8 @@ public class Server extends Thread {
         JScrollPane purchaseDetails = new JScrollPane(purchaseTable);
 
         JTabbedPane tp = new JTabbedPane();
-        refresh.addActionListener(actionEvent -> refreshAction(orderDetailsTable, stockDetailsTable, purchaseListTable));
-        refreshAction(orderDetailsTable, stockDetailsTable, purchaseListTable);
+        refresh.addActionListener(actionEvent -> refreshAction(orderDetailsTable, stockDetailsTable, purchaseListTable, fromDateInput, toDateInput));
+        refreshAction(orderDetailsTable, stockDetailsTable, purchaseListTable, fromDateInput, toDateInput);
 
         frame.setLayout(new BorderLayout());
         frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
@@ -73,23 +93,30 @@ public class Server extends Thread {
         tp.add("Orders", p1);
         tp.add("Stock", p2);
         tp.add("Purchase List", p3);
+        frame.add(datePanel, BorderLayout.PAGE_START);
         frame.add(tp, BorderLayout.CENTER);
         frame.add(refresh, BorderLayout.PAGE_END);
         frame.setVisible(true);
     }
 
-    private void refreshAction(DefaultTableModel orderDetailsTable, DefaultTableModel stockDetailsTable, DefaultTableModel purchaseListTable) {
+    private void refreshAction(DefaultTableModel orderDetailsTable, DefaultTableModel stockDetailsTable, DefaultTableModel purchaseListTable, JSpinner fromDateInput, JSpinner toDateInput) {
         orderDetailsTable.setRowCount(0);
         AtomicInteger orderCount = new AtomicInteger();
+        final Date fromDate = (Date) fromDateInput.getValue();
+        final Date toDate = (Date) toDateInput.getValue();
+
         ordersRecords.forEach((date_name, items) -> {
-            orderDetailsTable.addRow(new Object[]{orderCount.incrementAndGet(), date_name.getValue(), date_name.getKey(), "", "", "", ""});
-            AtomicInteger totalPrice = new AtomicInteger();
-            items.forEach(item -> {
-                orderDetailsTable.addRow(new Object[]{"", "", "", item.get(0), item.get(2), item.get(1), item.get(3)});
-                totalPrice.set(totalPrice.get() + Integer.parseInt(item.get(3)));
-            });
-            orderDetailsTable.addRow(new Object[]{"", "", "", "", "", "TOTAL", totalPrice});
-            orderDetailsTable.addRow(new Object[]{"", "", "", "", "", "", ""});
+            LocalDateTime orderDateTime = LocalDateTime.parse(date_name.getKey(), Constants.DATE_TIME_FORMATTER);
+            if (fromDate.toInstant().isBefore(orderDateTime.atZone(ZoneId.systemDefault()).toInstant()) && toDate.toInstant().isAfter(orderDateTime.atZone(ZoneId.systemDefault()).toInstant())) {
+                orderDetailsTable.addRow(new Object[]{orderCount.incrementAndGet(), date_name.getValue(), date_name.getKey(), "", "", "", ""});
+                AtomicInteger totalPrice = new AtomicInteger();
+                items.forEach(item -> {
+                    orderDetailsTable.addRow(new Object[]{"", "", "", item.get(0), item.get(2), item.get(1), item.get(3)});
+                    totalPrice.set(totalPrice.get() + Integer.parseInt(item.get(3)));
+                });
+                orderDetailsTable.addRow(new Object[]{"", "", "", "", "", "TOTAL", totalPrice});
+                orderDetailsTable.addRow(new Object[]{"", "", "", "", "", "", ""});
+            }
         });
         stockDetailsTable.setRowCount(0);
         Items.forEach((item, stock) -> {
@@ -116,7 +143,6 @@ public class Server extends Thread {
         // starts server and waits for a connection
         try {
             ServerSocket server = new ServerSocket(Constants.SERVER_PORT);
-            System.out.println("Tea Stall Server started");
             while (true) {
                 // initialize socket and input stream
                 Socket socket = server.accept();
@@ -131,7 +157,6 @@ public class Server extends Thread {
                 line = dataInputStream.readUTF();
                 if (line.equals(Constants.GET_AVAILABLE_LIST)) {
                     // Send message
-                    System.out.println("Sending available items");
                     for (String item : Items.keySet()) {
                         dataOutputStream.writeUTF(item);
                     }
@@ -139,7 +164,6 @@ public class Server extends Thread {
                     dataOutputStream.close();
 
                 } else if (line.equals(Constants.PLACE_ORDER)) {
-                    System.out.println("Receiving orders");
                     // reads message from client until "END" is sent
                     String item, customerName = dataInputStream.readUTF();
                     Integer quantity, rate;
