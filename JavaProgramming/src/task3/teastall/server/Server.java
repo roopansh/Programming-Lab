@@ -11,18 +11,26 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.time.LocalDateTime;
-import java.util.*;
-
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 
 public class Server extends Thread {
     private Map<String, Integer> Items; // Item, Stock
     private Map<String, Integer> ItemDelay; // item, total delay
-    private Map<String, Integer> ordersRecords = new HashMap<>();
+
+    // All orders Received
+    /*
+     * <Date, Name>  --->  List of <Item, rate, quantity, price>
+     * */
+    private Map<Pair<String, String>, List<List<String>>> ordersRecords = new HashMap<>();
     private OrdersProcessor ordersProcessor;
     private Map<String, ItemsProcessor> itemsProcessorMap;
-    int Snacks = 0;
-    int Cookies = 0;
+    private int Snacks = 0;
+    private int Cookies = 0;
     // constructor with port
 
 
@@ -39,7 +47,7 @@ public class Server extends Thread {
         start();
     }
 
-    public void generateGui() {
+    private void generateGui() {
 
         JFrame f = new JFrame();
         JLabel itemLabel = new JLabel("Select the item to order");
@@ -49,7 +57,7 @@ public class Server extends Thread {
         JPanel p2 = new JPanel();
         JPanel p3 = new JPanel();
         JButton refresh = new JButton("Refresh");//creating instance of JButton
-        DefaultTableModel orderDetailsTable = new DefaultTableModel(new String[]{"S.No.", "Item", "Qty"}, 0);
+        DefaultTableModel orderDetailsTable = new DefaultTableModel(new String[]{"S.No.", "Name", "Date", "Item", "Qty", "Rate", "Price"}, 0);
         DefaultTableModel stockDetailsTable = new DefaultTableModel(new String[]{"S.No.", "Item", "Qty"}, 0);
         DefaultTableModel purchaselistTable = new DefaultTableModel(new String[]{"S.No.", "Item"}, 0);
 
@@ -62,9 +70,12 @@ public class Server extends Thread {
         orderDetailsTable.setRowCount(0);
         stockDetailsTable.setRowCount(0);
 
-        ordersRecords.forEach((key, value) -> orderDetailsTable.addRow(new Object[]{orderDetailsTable.getRowCount() + 1, key, value}));
-        stockDetailsTable.addRow(new Object[]{stockDetailsTable.getRowCount() + 1, "Snacks",Items.get("Snacks") - Snacks});
-        stockDetailsTable.addRow(new Object[]{stockDetailsTable.getRowCount() + 1, "Cookies",Items.get("Cookies") - Cookies});
+        ordersRecords.forEach((date_name, items) -> {
+            orderDetailsTable.addRow(new Object[]{orderDetailsTable.getRowCount() + 1, date_name.getValue(), date_name.getKey(), "", "", "", ""});
+            items.forEach(item -> orderDetailsTable.addRow(new Object[]{"", "", "", item.get(0), item.get(2), item.get(1), item.get(3)}));
+        });
+        stockDetailsTable.addRow(new Object[]{stockDetailsTable.getRowCount() + 1, "Snacks", Items.get("Snacks") - Snacks});
+        stockDetailsTable.addRow(new Object[]{stockDetailsTable.getRowCount() + 1, "Cookies", Items.get("Cookies") - Cookies});
 
         p1.add(itemLabel);
         p1.add(orderDetails);
@@ -88,16 +99,26 @@ public class Server extends Thread {
 
         refresh.addActionListener(actionEvent -> {
             orderDetailsTable.setRowCount(0);
-            ordersRecords.forEach((key, value) -> orderDetailsTable.addRow(new Object[]{orderDetailsTable.getRowCount() + 1, key, value}));
+            AtomicInteger orderCount = new AtomicInteger();
+            ordersRecords.forEach((date_name, items) -> {
+                orderDetailsTable.addRow(new Object[]{orderCount.incrementAndGet(), date_name.getValue(), date_name.getKey(), "", "", "", ""});
+                AtomicInteger totalPrice = new AtomicInteger();
+                items.forEach(item -> {
+                    orderDetailsTable.addRow(new Object[]{"", "", "", item.get(0), item.get(2), item.get(1), item.get(3)});
+                    totalPrice.set(totalPrice.get() + Integer.parseInt(item.get(3)));
+                });
+                orderDetailsTable.addRow(new Object[]{"", "", "", "", "", "", totalPrice});
+                orderDetailsTable.addRow(new Object[]{"", "", "", "", "", "", ""});
+            });
             stockDetailsTable.setRowCount(0);
-            stockDetailsTable.addRow(new Object[]{stockDetailsTable.getRowCount() + 1, "Snacks",Items.get("Snacks") - Snacks});
-            stockDetailsTable.addRow(new Object[]{stockDetailsTable.getRowCount() + 1, "Cookies",Items.get("Cookies") - Cookies});
+            stockDetailsTable.addRow(new Object[]{stockDetailsTable.getRowCount() + 1, "Snacks", Items.get("Snacks") - Snacks});
+            stockDetailsTable.addRow(new Object[]{stockDetailsTable.getRowCount() + 1, "Cookies", Items.get("Cookies") - Cookies});
             purchaselistTable.setRowCount(0);
-            if (Constants.getInitialItems().get("Snacks")-Snacks <= 10){
-                purchaselistTable.addRow(new Object[]{purchaselistTable.getRowCount()+1,"Snacks"});
+            if (Constants.getInitialItems().get("Snacks") - Snacks <= 10) {
+                purchaselistTable.addRow(new Object[]{purchaselistTable.getRowCount() + 1, "Snacks"});
             }
-            if (Constants.getInitialItems().get("Cookies")-Cookies <= 10){
-                purchaselistTable.addRow(new Object[]{purchaselistTable.getRowCount()+1,"Cookies"});
+            if (Constants.getInitialItems().get("Cookies") - Cookies <= 10) {
+                purchaselistTable.addRow(new Object[]{purchaselistTable.getRowCount() + 1, "Cookies"});
             }
         });
         f.add(refresh);
@@ -109,7 +130,7 @@ public class Server extends Thread {
     @Override
     public void run() {
         ordersProcessor.start();
-        for(ItemsProcessor itemsProcessor : itemsProcessorMap.values()){
+        for (ItemsProcessor itemsProcessor : itemsProcessorMap.values()) {
             itemsProcessor.start();
         }
 
@@ -141,38 +162,39 @@ public class Server extends Thread {
                 } else if (line.equals(Constants.PLACE_ORDER)) {
                     System.out.println("Receiving orders");
                     // reads message from client until "END" is sent
-                    String item;
-                    int quantity;
-                    Map<String, Integer> order = new HashMap<>();
+                    String item, customerName = dataInputStream.readUTF();
+                    Integer quantity, rate;
+                    List<List<String>> order = new ArrayList<>();
                     line = dataInputStream.readUTF();
                     while (!line.equals(Constants.MESSAGE_END)) {
                         try {
                             item = line;
                             line = dataInputStream.readUTF();
                             quantity = Integer.parseInt(line);
+
                             if (Items.containsKey(item)) {
-                                order.put(item, quantity);
-                                if (!ordersRecords.containsKey(item)) {
-                                    ordersRecords.put(item, quantity);
-                                }else {
-                                    ordersRecords.put(item,quantity + ordersRecords.get(item));
-                                }
-                                if (new String("Snacks").equals(item)){
+                                List<String> orderDetails = new ArrayList<>();
+                                orderDetails.add(item);
+                                rate = Constants.getItemsPrice().get(item);
+                                orderDetails.add(rate.toString());
+                                orderDetails.add(quantity.toString());
+                                orderDetails.add(String.valueOf(quantity * rate));
+
+                                order.add(orderDetails);
+
+                                if (new String("Snacks").equals(item)) {
                                     Snacks = Snacks + quantity;
-                                }
-                                else if(new String("Cookies").equals(item)){
+                                } else if (new String("Cookies").equals(item)) {
                                     Cookies = Cookies + quantity;
                                 }
-                                //System.out.println("Snacks ordered = ");
-
-                                System.out.println(item);
-                                System.out.println(quantity);
                             }
                             line = dataInputStream.readUTF();
                         } catch (IOException i) {
                             System.out.println(i);
                         }
                     }
+
+                    ordersRecords.put(new Pair(LocalDateTime.now().toString(), customerName), order);
 
                     OrderProcessor orderProcessor = new OrderProcessor(this, order, LocalDateTime.now(), socket);
                     ordersProcessor.orders.add(orderProcessor);

@@ -6,18 +6,18 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.time.LocalDateTime;
-import java.util.Map;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 public class OrderProcessor extends Thread {
-    private Map<String, Integer> order;
+    private List<List<String>> order;   // List of <Item, rate, quantity, price>
     private Server server;
     private int delay;
     private boolean available;
     private Socket socket;
     private LocalDateTime orderTime;
 
-    OrderProcessor(Server server, Map<String, Integer> order, LocalDateTime orderTime, Socket socket) {
+    OrderProcessor(Server server, List<List<String>> order, LocalDateTime orderTime, Socket socket) {
         this.order = order;
         this.server = server;
         delay = -1;
@@ -33,11 +33,13 @@ public class OrderProcessor extends Thread {
         int count = 0;
         CountDownLatch latch = new CountDownLatch(order.size());
 
-        for (Map.Entry<String, Integer> entry : order.entrySet()) {
-            itemProcessors[count] = new ItemProcessor(server, entry.getKey(), entry.getValue(), latch);
+        for (List<String> itemDetails : order) {
+            String item = itemDetails.get(0);
+            int quantity = Integer.parseInt(itemDetails.get(2));
+            itemProcessors[count] = new ItemProcessor(server, item, quantity, latch);
             // aquire lock the item list and then add to the queueu
 
-            ItemsProcessor itemsProcessor = server.getItemsProcessorMap().get(entry.getKey());
+            ItemsProcessor itemsProcessor = server.getItemsProcessorMap().get(item);
             itemsProcessor.queueLock.lock();
             itemsProcessor.itemOrders.add(itemProcessors[count]);
             itemsProcessor.queueLock.unlock();

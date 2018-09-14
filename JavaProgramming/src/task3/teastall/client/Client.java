@@ -183,6 +183,7 @@ public class Client {
 
         try {
             dataOutputStream.writeUTF(Constants.PLACE_ORDER);
+            dataOutputStream.writeUTF("Roopansh");
         } catch (IOException e) {
             System.out.println(e);
         }
