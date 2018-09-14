@@ -193,7 +193,7 @@ public class Server extends Thread {
         return Items;
     }
 
-    public Map<String, ItemsProcessor> getItemsProcessorMap() {
+    Map<String, ItemsProcessor> getItemsProcessorMap() {
         return itemsProcessorMap;
     }
 

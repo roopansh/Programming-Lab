@@ -8,8 +8,8 @@ import java.util.List;
 
 public class OrdersProcessor extends Thread {
     List<OrderProcessor> orders;
-    List<OrderProcessor> processingOrders;
-    LocalDateTime timeStamp;
+    private List<OrderProcessor> processingOrders;
+    private LocalDateTime timeStamp;
 
     OrdersProcessor() {
         super();
@@ -47,7 +47,6 @@ public class OrdersProcessor extends Thread {
                     e.printStackTrace();
                 }
             }
-
         }
     }
 }
