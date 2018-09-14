@@ -53,7 +53,7 @@ public class Server extends Thread {
         DefaultTableModel orderDetailsTable = new DefaultTableModel(new String[]{"S.No.", "Name", "Date", "Item", "Qty", "Rate", "Price"}, 0);
         DefaultTableModel stockDetailsTable = new DefaultTableModel(new String[]{"S.No.", "Item", "Stock Available"}, 0);
         DefaultTableModel purchaseListTable = new DefaultTableModel(new String[]{"S.No.", "Item"}, 0);
-
+        
         JTable orderTable = new JTable(orderDetailsTable);
         JTable stockTable = new JTable(stockDetailsTable);
         JTable purchaseTable = new JTable(purchaseListTable);

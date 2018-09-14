@@ -4,6 +4,7 @@ import task3.teastall.Constants;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import java.awt.*;
 import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -73,31 +74,33 @@ public class Client {
     private void generateGui() {
         JFrame frame = new JFrame(); //creating instance of JFrame
 
+        JLabel customerNameLabel = new JLabel("Enter Your Name");
+        JTextField customerName = new JTextField();
         JLabel itemLabel = new JLabel("Select the item to order");
         JLabel quantityLabel = new JLabel("Select the quantity of item to order.");
-        JButton orderButton = new JButton("Order");//creating instance of JButton
-        JButton addButton = new JButton("Add");//creating instance of JButton
-        JButton invoiceButton = new JButton("Invoice");//creating instance of JButton
-        SpinnerModel spinnerNumberModel = new SpinnerNumberModel(1, //initial value
-                1, //minimum value
-                100, //maximum value
-                1); //step
+        JButton orderButton = new JButton("Place Order");
+        JButton addButton = new JButton("Add Selected Item");
+        JButton clearButton = new JButton("Clear");
+        JButton invoiceButton = new JButton("View Invoice");
+        SpinnerModel spinnerNumberModel = new SpinnerNumberModel(1, 1, 100, 1);
         JSpinner quantitySpinner = new JSpinner(spinnerNumberModel);
         JList itemList = new JList(Items.toArray());
         DefaultTableModel orderDetailsTable = new DefaultTableModel(new String[]{"S.No.", "Item", "Qty"}, 0);
         JTable orderTable = new JTable(orderDetailsTable);
         JScrollPane orderDetails = new JScrollPane(orderTable);
 
-
         // x axis, y axis, width, height
+        customerNameLabel.setBounds(50, 10, 250, 30);
+        customerName.setBounds(350, 10, 100, 30);
         itemLabel.setBounds(50, 50, 250, 30);
         itemList.setBounds(350, 50, 100, 150);
         quantityLabel.setBounds(50, 250, 250, 30);
         quantitySpinner.setBounds(350, 250, 50, 30);
-        addButton.setBounds(250, 400, 100, 40);
-        orderDetails.setBounds(50, 500, 500, 200);
-        orderButton.setBounds(200, 700, 100, 40);
-        invoiceButton.setBounds(350, 700, 100, 40);
+        addButton.setBounds(100, 400, 200, 40);
+        clearButton.setBounds(300, 400, 200, 40);
+        orderDetails.setBounds(0, 500, 600, 200);
+        orderButton.setBounds(100, 700, 200, 40);
+        invoiceButton.setBounds(300, 700, 200, 40);
 
         addButton.addActionListener(actionEvent -> {
             String item = Items.get(itemList.getSelectedIndex());
@@ -107,68 +110,75 @@ public class Client {
             OrderItemList.forEach((key, value) -> orderDetailsTable.addRow(new Object[]{orderDetailsTable.getRowCount() + 1, key, value}));
             if (OrderItemList.size() > 0) {
                 orderButton.setEnabled(true);
+                clearButton.setEnabled(true);
                 invoiceButton.setEnabled(false);
             } else {
+                clearButton.setEnabled(false);
                 orderButton.setEnabled(false);
                 invoiceButton.setEnabled(false);
             }
         });
 
+        clearButton.addActionListener(actionEvent -> {
+            OrderItemList.clear();
+            orderDetailsTable.setRowCount(0);
+            orderButton.setEnabled(false);
+            invoiceButton.setEnabled(false);
+            clearButton.setEnabled(false);
+        });
+
         orderButton.addActionListener(actionEvent -> {
             spinnerNumberModel.setValue(1);
-            orderDetailsTable.setRowCount(0);
-            String message = sendOrder();
+            String name = customerName.getText();
+            String message = sendOrder(name);
             JOptionPane.showMessageDialog(frame, message);
             invoiceButton.setEnabled(true);
         });
+
         invoiceButton.addActionListener(actionEvent -> generateInvoice());
 
+        clearButton.setEnabled(false);
         orderButton.setEnabled(false);
         invoiceButton.setEnabled(false);
 
+        frame.add(customerNameLabel);
+        frame.add(customerName);
         frame.add(itemLabel);
         frame.add(itemList);
         frame.add(quantityLabel);
         frame.add(quantitySpinner);
-        frame.add(addButton);//adding addButton in JFrame
+        frame.add(addButton);
+        frame.add(clearButton);
         frame.add(orderDetails);
-        frame.add(orderButton);//adding orderButton in JFrame
+        frame.add(orderButton);
         frame.add(invoiceButton);
 
         frame.setSize(600, 800);//600 width and 800 height
-
         frame.setLayout(null);//using no layout managers
-
         frame.setVisible(true);//making the frame visible
     }
 
     private void generateInvoice() {
-        JFrame frame = new JFrame(); //creating instance of JFrame
-        JLabel itemLabel = new JLabel("Customer Reciept");
-        DefaultTableModel orderDetailsTable = new DefaultTableModel(new String[]{"S.No.", "Item", "Qty", "Price"}, 0);
+        JFrame frame = new JFrame();
+        frame.setTitle("Customer Reciept");
+        frame.setLayout(new BorderLayout());
+
+        DefaultTableModel orderDetailsTable = new DefaultTableModel(new String[]{"S.No.", "Item", "Qty", "Rate", "Price"}, 0);
         JTable orderTable = new JTable(orderDetailsTable);
         JScrollPane orderDetails = new JScrollPane(orderTable);
-        OrderItemList.forEach((key, value) -> orderDetailsTable.addRow(new Object[]{orderDetailsTable.getRowCount() + 1, key, value, Constants.getItemsPrice().get(key)}));
+        OrderItemList.forEach((key, value) -> orderDetailsTable.addRow(new Object[]{orderDetailsTable.getRowCount() + 1, key, value, Constants.getItemsPrice().get(key), Constants.getItemsPrice().get(key) * value}));
 
-        for (Object o : OrderItemList.entrySet()) {
-            Map.Entry pair = (Map.Entry) o;
+        for (Map.Entry<String, Integer> pair : OrderItemList.entrySet()) {
             totalPrice = totalPrice + (Constants.getItemsPrice().get(pair.getKey()) * Integer.parseInt(pair.getValue().toString()));
         }
-        orderDetailsTable.addRow(new Object[]{"", "", "Total Price", totalPrice});
+        orderDetailsTable.addRow(new Object[]{"", "", "Total Price", "", totalPrice});
 
-        itemLabel.setBounds(50, 100, 250, 30);
-        frame.setSize(600, 800);//600 width and 800 height
-        orderDetails.setBounds(50, 200, 500, 200);
-
-        frame.add(itemLabel);
-        frame.add(orderDetails);
-
-        frame.setLayout(null);//using no layout managers
-
+        frame.setSize(600, 800);
+        frame.add(orderDetails, BorderLayout.CENTER);
         frame.setVisible(true);//making the frame visible
     }
 
-    private String sendOrder() {
+    private String sendOrder(String customerName) {
         // establish a connection
         try {
             socket = new Socket(Constants.SERVER_ADDRESS, Constants.SERVER_PORT);
@@ -182,7 +192,7 @@ public class Client {
 
         try {
             dataOutputStream.writeUTF(Constants.PLACE_ORDER);
-            dataOutputStream.writeUTF("Roopansh");
+            dataOutputStream.writeUTF(customerName);
         } catch (IOException e) {
             System.out.println(e.toString());
         }
