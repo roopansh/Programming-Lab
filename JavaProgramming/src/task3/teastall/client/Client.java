@@ -9,10 +9,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import static java.lang.System.out;
@@ -23,7 +20,7 @@ public class Client {
     private Socket socket = null;
     private DataInputStream dataInputStream = null;
     private DataOutputStream dataOutputStream = null;
-
+    private Integer totalPrice = 0;
     private Client() {
         OrderItemList = new HashMap<>();
         Items = new ArrayList<>();
@@ -76,6 +73,7 @@ public class Client {
         JLabel quantityLabel = new JLabel("Select the quantity of item to order.");
         JButton orderButton = new JButton("Order");//creating instance of JButton
         JButton addButton = new JButton("Add");//creating instance of JButton
+        JButton invoiceButton = new JButton("Invoice");//creating instance of JButton
         SpinnerModel spinnerNumberModel = new SpinnerNumberModel(1, //initial value
                 1, //minimum value
                 10, //maximum value
@@ -94,7 +92,8 @@ public class Client {
         quantitySpinner.setBounds(350, 250, 50, 30);
         addButton.setBounds(250, 400, 100, 40);
         orderDetails.setBounds(50, 500, 500, 200);
-        orderButton.setBounds(250, 750, 100, 40);
+        orderButton.setBounds(200, 700, 100, 40);
+        invoiceButton.setBounds(350, 700, 100, 40);
 
         addButton.addActionListener(actionEvent -> {
             String item = Items.get(itemList.getSelectedIndex());
@@ -104,17 +103,26 @@ public class Client {
             OrderItemList.forEach((key, value) -> orderDetailsTable.addRow(new Object[]{orderDetailsTable.getRowCount() + 1, key, value}));
             if (OrderItemList.size() > 0) {
                 orderButton.setEnabled(true);
+                invoiceButton.setEnabled(false);
             } else {
                 orderButton.setEnabled(false);
+                invoiceButton.setEnabled(false);
             }
         });
 
         orderButton.addActionListener(actionEvent -> {
+            spinnerNumberModel.setValue(1);
+            orderDetailsTable.setRowCount(0);
             String message = sendOrder();
             JOptionPane.showMessageDialog(frame, message);
+            invoiceButton.setEnabled(true);
+        });
+        invoiceButton.addActionListener(actionEvent -> {
+            generateInvoice();
         });
 
         orderButton.setEnabled(false);
+        invoiceButton.setEnabled(false);
 
         frame.add(itemLabel);
         frame.add(itemList);
@@ -123,7 +131,7 @@ public class Client {
         frame.add(addButton);//adding addButton in JFrame
         frame.add(orderDetails);
         frame.add(orderButton);//adding orderButton in JFrame
-
+        frame.add(invoiceButton);
 
         frame.setSize(600, 800);//600 width and 800 height
 
@@ -132,6 +140,35 @@ public class Client {
         frame.setVisible(true);//making the frame visible
     }
 
+    private void generateInvoice(){
+        JFrame frame = new JFrame(); //creating instance of JFrame
+        JLabel ShopLabel = new JLabel("Canteen");
+        JLabel itemLabel = new JLabel("Customer Reciept");
+        DefaultTableModel orderDetailsTable = new DefaultTableModel(new String[]{"S.No.", "Item", "Qty","Price"}, 0);
+        JTable orderTable = new JTable(orderDetailsTable);
+        JScrollPane orderDetails = new JScrollPane(orderTable);
+        OrderItemList.forEach( (key, value) -> orderDetailsTable.addRow(new Object[]{orderDetailsTable.getRowCount() + 1, key, value,Constants.getItemsPrice().get(key)}));
+
+        Iterator it = OrderItemList.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry pair = (Map.Entry)it.next();
+            totalPrice = totalPrice + (Constants.getItemsPrice().get(pair.getKey()) * Integer.parseInt(pair.getValue().toString()));
+        }
+        orderDetailsTable.addRow(new Object[]{"", "", "Total Price",totalPrice});
+
+        ShopLabel.setBounds(50, 50, 250, 30);
+        itemLabel.setBounds(50, 100, 250, 30);
+        frame.setSize(600, 800);//600 width and 800 height
+        orderDetails.setBounds(50, 200, 500, 200);
+
+        frame.add(ShopLabel);
+        frame.add(itemLabel);
+        frame.add(orderDetails);
+
+        frame.setLayout(null);//using no layout managers
+
+        frame.setVisible(true);//making the frame visible
+    }
     private String sendOrder() {
         // establish a connection
         try {
