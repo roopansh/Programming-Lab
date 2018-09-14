@@ -22,14 +22,12 @@ public class ItemProcessor extends Thread {
     @Override
     public void run() {
         int stock = this.server.getItems().getOrDefault(item, 0);
-        if (quantity > stock) {
+        if (!item.equals(Constants.TEA) && !item.equals(Constants.COFFEE) && quantity > stock) {
             delay = -1;
         } else {
             delay = this.server.getItemDelay().getOrDefault(item, -1);
             delay = delay * quantity + Constants.DELIVERY_TIME;
-            if (!item.equals(Constants.TEA) && !item.equals(Constants.COFFEE)) {
-                this.server.getItems().put(item, stock - quantity);
-            }
+            this.server.getItems().put(item, stock - quantity);
         }
         latch.countDown();
     }

@@ -15,8 +15,8 @@ public class Constants {
     public static final int DELIVERY_TIME = 2;
     public static final String COFFEE = "Coffee";
     public static final String TEA = "Tea";
-    public static final String SNACKS = "Snacks";
-    public static final String COOKIES = "Cookies";
+    private static final String SNACKS = "Snacks";
+    private static final String COOKIES = "Cookies";
 
     public static Map<String, Integer> getInitialItems() {
         Map<String, Integer> items = new HashMap<>();

@@ -5,6 +5,7 @@ import task3.teastall.Constants;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import java.awt.*;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -44,10 +45,10 @@ public class Server extends Thread {
     }
 
     private void generateGui() {
-        JFrame f = new JFrame();
-        JPanel p1 = new JPanel();
-        JPanel p2 = new JPanel();
-        JPanel p3 = new JPanel();
+        JFrame frame = new JFrame();
+        JPanel p1 = new JPanel(new BorderLayout());
+        JPanel p2 = new JPanel(new BorderLayout());
+        JPanel p3 = new JPanel(new BorderLayout());
         JButton refresh = new JButton("Refresh"); //creating instance of JButton
         DefaultTableModel orderDetailsTable = new DefaultTableModel(new String[]{"S.No.", "Name", "Date", "Item", "Qty", "Rate", "Price"}, 0);
         DefaultTableModel stockDetailsTable = new DefaultTableModel(new String[]{"S.No.", "Item", "Stock Available"}, 0);
@@ -60,30 +61,21 @@ public class Server extends Thread {
         JScrollPane stockDetails = new JScrollPane(stockTable);
         JScrollPane purchaseDetails = new JScrollPane(purchaseTable);
 
-        p1.add(orderDetails);
-        p2.add(stockDetails);
-        p3.add(purchaseDetails);
-
         JTabbedPane tp = new JTabbedPane();
-
-        tp.setBounds(50, 50, 500, 600);
-        tp.add("Orders", p1);
-        tp.add("Stock", p2);
-        tp.add("Purchase List", p3);
-        f.add(tp);
-        f.setSize(600, 800);
-        orderDetails.setBounds(50, 400, 500, 200);
-        purchaseDetails.setBounds(50, 400, 500, 200);
-        stockDetails.setBounds(50, 400, 500, 200);
-        refresh.setBounds(250, 650, 100, 40);
-
         refresh.addActionListener(actionEvent -> refreshAction(orderDetailsTable, stockDetailsTable, purchaseListTable));
         refreshAction(orderDetailsTable, stockDetailsTable, purchaseListTable);
 
-        f.add(refresh);
-        f.setLayout(null);
-        f.setVisible(true);
-
+        frame.setLayout(new BorderLayout());
+        frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
+        p1.add(orderDetails, BorderLayout.CENTER);
+        p2.add(stockDetails, BorderLayout.CENTER);
+        p3.add(purchaseDetails, BorderLayout.CENTER);
+        tp.add("Orders", p1);
+        tp.add("Stock", p2);
+        tp.add("Purchase List", p3);
+        frame.add(tp, BorderLayout.CENTER);
+        frame.add(refresh, BorderLayout.PAGE_END);
+        frame.setVisible(true);
     }
 
     private void refreshAction(DefaultTableModel orderDetailsTable, DefaultTableModel stockDetailsTable, DefaultTableModel purchaseListTable) {
@@ -96,7 +88,7 @@ public class Server extends Thread {
                 orderDetailsTable.addRow(new Object[]{"", "", "", item.get(0), item.get(2), item.get(1), item.get(3)});
                 totalPrice.set(totalPrice.get() + Integer.parseInt(item.get(3)));
             });
-            orderDetailsTable.addRow(new Object[]{"", "", "", "", "", "", totalPrice});
+            orderDetailsTable.addRow(new Object[]{"", "", "", "", "", "TOTAL", totalPrice});
             orderDetailsTable.addRow(new Object[]{"", "", "", "", "", "", ""});
         });
         stockDetailsTable.setRowCount(0);
@@ -171,7 +163,7 @@ public class Server extends Thread {
                             }
                             line = dataInputStream.readUTF();
                         } catch (IOException i) {
-                            System.out.println(i);
+                            System.out.println(i.toString());
                         }
                     }
 
@@ -180,7 +172,7 @@ public class Server extends Thread {
                 }
             }
         } catch (IOException i) {
-            System.out.println(i);
+            System.out.println(i.toString());
         }
 
     }
@@ -197,7 +189,7 @@ public class Server extends Thread {
         return itemsProcessorMap;
     }
 
-    public Map<Pair<String, String>, List<List<String>>> getOrdersRecords() {
+    Map<Pair<String, String>, List<List<String>>> getOrdersRecords() {
         return ordersRecords;
     }
 

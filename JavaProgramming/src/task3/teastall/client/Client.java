@@ -42,7 +42,7 @@ public class Client {
             dataInputStream = new DataInputStream(socket.getInputStream());
             dataOutputStream = new DataOutputStream(socket.getOutputStream());
         } catch (IOException i) {
-            System.out.println(i);
+            System.out.println(i.toString());
         }
 
         // string to read message from input
@@ -51,7 +51,7 @@ public class Client {
         try {
             dataOutputStream.writeUTF(Constants.GET_AVAILABLE_LIST);
         } catch (IOException e) {
-            System.out.println(e);
+            System.out.println(e.toString());
         }
 
         // keep reading until "End" is input
@@ -60,13 +60,13 @@ public class Client {
                 this.Items.add(line);
                 line = dataInputStream.readUTF();
             } catch (IOException i) {
-                System.out.println(i);
+                System.out.println(i.toString());
             }
         }
         try {
             socket.close();
         } catch (IOException e) {
-            System.out.println(e);
+            System.out.println(e.toString());
         }
     }
 
@@ -177,14 +177,14 @@ public class Client {
             dataInputStream = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
             dataOutputStream = new DataOutputStream(socket.getOutputStream());
         } catch (IOException i) {
-            System.out.println(i);
+            System.out.println(i.toString());
         }
 
         try {
             dataOutputStream.writeUTF(Constants.PLACE_ORDER);
             dataOutputStream.writeUTF("Roopansh");
         } catch (IOException e) {
-            System.out.println(e);
+            System.out.println(e.toString());
         }
 
         // keep writing until "End"
@@ -193,13 +193,13 @@ public class Client {
                 dataOutputStream.writeUTF(entry.getKey());
                 dataOutputStream.writeUTF(Integer.toString(entry.getValue()));
             } catch (IOException e) {
-                System.out.println(e);
+                System.out.println(e.toString());
             }
         }
         try {
             dataOutputStream.writeUTF(Constants.MESSAGE_END);
         } catch (IOException e) {
-            System.out.println(e);
+            System.out.println(e.toString());
         }
 
         try {
@@ -219,7 +219,7 @@ public class Client {
         try {
             socket.close();
         } catch (IOException e) {
-            System.out.println(e);
+            System.out.println(e.toString());
         }
         return line;
     }
