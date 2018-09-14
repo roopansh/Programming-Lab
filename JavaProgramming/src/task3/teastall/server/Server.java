@@ -29,10 +29,6 @@ public class Server extends Thread {
     private Map<Pair<String, String>, List<List<String>>> ordersRecords = new HashMap<>();
     private OrdersProcessor ordersProcessor;
     private Map<String, ItemsProcessor> itemsProcessorMap;
-    private int Snacks = 0;
-    private int Cookies = 0;
-    // constructor with port
-
 
     private Server() {
 
@@ -41,47 +37,31 @@ public class Server extends Thread {
         itemsProcessorMap = new HashMap<>();
         ordersProcessor = new OrdersProcessor();
         for (String item : Items.keySet()) {
-            itemsProcessorMap.put(item, new ItemsProcessor(item));
+            itemsProcessorMap.put(item, new ItemsProcessor());
         }
         generateGui();
         start();
     }
 
     private void generateGui() {
-
         JFrame f = new JFrame();
-        JLabel itemLabel = new JLabel("Select the item to order");
-        JLabel stockLabel = new JLabel("Available Stock");
-        JLabel purchaseLabel = new JLabel("Items required to purchase");
         JPanel p1 = new JPanel();
         JPanel p2 = new JPanel();
         JPanel p3 = new JPanel();
-        JButton refresh = new JButton("Refresh");//creating instance of JButton
+        JButton refresh = new JButton("Refresh"); //creating instance of JButton
         DefaultTableModel orderDetailsTable = new DefaultTableModel(new String[]{"S.No.", "Name", "Date", "Item", "Qty", "Rate", "Price"}, 0);
-        DefaultTableModel stockDetailsTable = new DefaultTableModel(new String[]{"S.No.", "Item", "Qty"}, 0);
-        DefaultTableModel purchaselistTable = new DefaultTableModel(new String[]{"S.No.", "Item"}, 0);
+        DefaultTableModel stockDetailsTable = new DefaultTableModel(new String[]{"S.No.", "Item", "Stock Available"}, 0);
+        DefaultTableModel purchaseListTable = new DefaultTableModel(new String[]{"S.No.", "Item"}, 0);
 
         JTable orderTable = new JTable(orderDetailsTable);
         JTable stockTable = new JTable(stockDetailsTable);
-        JTable purchaseTable = new JTable(purchaselistTable);
+        JTable purchaseTable = new JTable(purchaseListTable);
         JScrollPane orderDetails = new JScrollPane(orderTable);
         JScrollPane stockDetails = new JScrollPane(stockTable);
         JScrollPane purchaseDetails = new JScrollPane(purchaseTable);
-        orderDetailsTable.setRowCount(0);
-        stockDetailsTable.setRowCount(0);
 
-        ordersRecords.forEach((date_name, items) -> {
-            orderDetailsTable.addRow(new Object[]{orderDetailsTable.getRowCount() + 1, date_name.getValue(), date_name.getKey(), "", "", "", ""});
-            items.forEach(item -> orderDetailsTable.addRow(new Object[]{"", "", "", item.get(0), item.get(2), item.get(1), item.get(3)}));
-        });
-        stockDetailsTable.addRow(new Object[]{stockDetailsTable.getRowCount() + 1, "Snacks", Items.get("Snacks") - Snacks});
-        stockDetailsTable.addRow(new Object[]{stockDetailsTable.getRowCount() + 1, "Cookies", Items.get("Cookies") - Cookies});
-
-        p1.add(itemLabel);
         p1.add(orderDetails);
-        p2.add(stockLabel);
         p2.add(stockDetails);
-        p3.add(purchaseLabel);
         p3.add(purchaseDetails);
 
         JTabbedPane tp = new JTabbedPane();
@@ -97,34 +77,41 @@ public class Server extends Thread {
         stockDetails.setBounds(50, 400, 500, 200);
         refresh.setBounds(250, 650, 100, 40);
 
-        refresh.addActionListener(actionEvent -> {
-            orderDetailsTable.setRowCount(0);
-            AtomicInteger orderCount = new AtomicInteger();
-            ordersRecords.forEach((date_name, items) -> {
-                orderDetailsTable.addRow(new Object[]{orderCount.incrementAndGet(), date_name.getValue(), date_name.getKey(), "", "", "", ""});
-                AtomicInteger totalPrice = new AtomicInteger();
-                items.forEach(item -> {
-                    orderDetailsTable.addRow(new Object[]{"", "", "", item.get(0), item.get(2), item.get(1), item.get(3)});
-                    totalPrice.set(totalPrice.get() + Integer.parseInt(item.get(3)));
-                });
-                orderDetailsTable.addRow(new Object[]{"", "", "", "", "", "", totalPrice});
-                orderDetailsTable.addRow(new Object[]{"", "", "", "", "", "", ""});
-            });
-            stockDetailsTable.setRowCount(0);
-            stockDetailsTable.addRow(new Object[]{stockDetailsTable.getRowCount() + 1, "Snacks", Items.get("Snacks") - Snacks});
-            stockDetailsTable.addRow(new Object[]{stockDetailsTable.getRowCount() + 1, "Cookies", Items.get("Cookies") - Cookies});
-            purchaselistTable.setRowCount(0);
-            if (Constants.getInitialItems().get("Snacks") - Snacks <= 10) {
-                purchaselistTable.addRow(new Object[]{purchaselistTable.getRowCount() + 1, "Snacks"});
-            }
-            if (Constants.getInitialItems().get("Cookies") - Cookies <= 10) {
-                purchaselistTable.addRow(new Object[]{purchaselistTable.getRowCount() + 1, "Cookies"});
-            }
-        });
+        refresh.addActionListener(actionEvent -> refreshAction(orderDetailsTable, stockDetailsTable, purchaseListTable));
+        refreshAction(orderDetailsTable, stockDetailsTable, purchaseListTable);
+
         f.add(refresh);
         f.setLayout(null);
         f.setVisible(true);
 
+    }
+
+    private void refreshAction(DefaultTableModel orderDetailsTable, DefaultTableModel stockDetailsTable, DefaultTableModel purchaseListTable) {
+        orderDetailsTable.setRowCount(0);
+        AtomicInteger orderCount = new AtomicInteger();
+        ordersRecords.forEach((date_name, items) -> {
+            orderDetailsTable.addRow(new Object[]{orderCount.incrementAndGet(), date_name.getValue(), date_name.getKey(), "", "", "", ""});
+            AtomicInteger totalPrice = new AtomicInteger();
+            items.forEach(item -> {
+                orderDetailsTable.addRow(new Object[]{"", "", "", item.get(0), item.get(2), item.get(1), item.get(3)});
+                totalPrice.set(totalPrice.get() + Integer.parseInt(item.get(3)));
+            });
+            orderDetailsTable.addRow(new Object[]{"", "", "", "", "", "", totalPrice});
+            orderDetailsTable.addRow(new Object[]{"", "", "", "", "", "", ""});
+        });
+        stockDetailsTable.setRowCount(0);
+        Items.forEach((item, stock) -> {
+            if (!item.equals(Constants.TEA) && !item.equals(Constants.COFFEE)) {
+                stockDetailsTable.addRow(new Object[]{stockDetailsTable.getRowCount() + 1, item, stock});
+            }
+        });
+
+        purchaseListTable.setRowCount(0);
+        Items.forEach((item, stock) -> {
+            if (!item.equals(Constants.TEA) && !item.equals(Constants.COFFEE) && stock < Constants.getThresholdValues().get(item)) {
+                purchaseListTable.addRow(new Object[]{purchaseListTable.getRowCount() + 1, item});
+            }
+        });
     }
 
     @Override
@@ -181,12 +168,6 @@ public class Server extends Thread {
                                 orderDetails.add(String.valueOf(quantity * rate));
 
                                 order.add(orderDetails);
-
-                                if (new String("Snacks").equals(item)) {
-                                    Snacks = Snacks + quantity;
-                                } else if (new String("Cookies").equals(item)) {
-                                    Cookies = Cookies + quantity;
-                                }
                             }
                             line = dataInputStream.readUTF();
                         } catch (IOException i) {
@@ -194,11 +175,8 @@ public class Server extends Thread {
                         }
                     }
 
-                    ordersRecords.put(new Pair(LocalDateTime.now().toString(), customerName), order);
-
-                    OrderProcessor orderProcessor = new OrderProcessor(this, order, LocalDateTime.now(), socket);
+                    OrderProcessor orderProcessor = new OrderProcessor(this, order, LocalDateTime.now(), customerName, socket);
                     ordersProcessor.orders.add(orderProcessor);
-
                 }
             }
         } catch (IOException i) {
@@ -217,6 +195,10 @@ public class Server extends Thread {
 
     public Map<String, ItemsProcessor> getItemsProcessorMap() {
         return itemsProcessorMap;
+    }
+
+    public Map<Pair<String, String>, List<List<String>>> getOrdersRecords() {
+        return ordersRecords;
     }
 
     public static void main(String[] args) {

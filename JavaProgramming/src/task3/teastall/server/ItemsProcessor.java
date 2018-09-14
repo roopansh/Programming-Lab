@@ -5,12 +5,10 @@ import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
 
 class ItemsProcessor extends Thread {
-    String item;
     List<ItemProcessor> itemOrders;
     ReentrantLock queueLock;
 
-    ItemsProcessor(String item) {
-        this.item = item;
+    ItemsProcessor() {
         this.itemOrders = new ArrayList<>();
         queueLock = new ReentrantLock();
     }

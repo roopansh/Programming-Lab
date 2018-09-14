@@ -1,5 +1,7 @@
 package task3.teastall.server;
 
+import task3.teastall.Constants;
+
 import java.util.concurrent.CountDownLatch;
 
 public class ItemProcessor extends Thread {
@@ -8,6 +10,7 @@ public class ItemProcessor extends Thread {
     private Server server;
     private int delay;
     private CountDownLatch latch;
+
     ItemProcessor(Server server, String item, int quantity, CountDownLatch latch) {
         super();
         this.item = item;
@@ -18,11 +21,15 @@ public class ItemProcessor extends Thread {
 
     @Override
     public void run() {
-        if (quantity > this.server.getItems().getOrDefault(item, 0)) {
+        int stock = this.server.getItems().getOrDefault(item, 0);
+        if (quantity > stock) {
             delay = -1;
         } else {
             delay = this.server.getItemDelay().getOrDefault(item, -1);
-            delay = delay * quantity + 2;
+            delay = delay * quantity + Constants.DELIVERY_TIME;
+            if (!item.equals(Constants.TEA) && !item.equals(Constants.COFFEE)) {
+                this.server.getItems().put(item, stock - quantity);
+            }
         }
         latch.countDown();
     }

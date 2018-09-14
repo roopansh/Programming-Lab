@@ -1,5 +1,6 @@
 package task3.teastall.server;
 
+import javafx.util.Pair;
 import task3.teastall.Constants;
 
 import java.io.DataOutputStream;
@@ -16,14 +17,16 @@ public class OrderProcessor extends Thread {
     private boolean available;
     private Socket socket;
     private LocalDateTime orderTime;
+    private String customerName;
 
-    OrderProcessor(Server server, List<List<String>> order, LocalDateTime orderTime, Socket socket) {
+    OrderProcessor(Server server, List<List<String>> order, LocalDateTime orderTime, String customerName, Socket socket) {
         this.order = order;
         this.server = server;
         delay = -1;
         available = true;
         this.socket = socket;
         this.orderTime = orderTime;
+        this.customerName = customerName;
     }
 
     @Override
@@ -88,6 +91,9 @@ public class OrderProcessor extends Thread {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+
+            server.getOrdersRecords().put(new Pair(orderTime.format(Constants.DATE_TIME_FORMATTER), customerName), order);
+
         } else {
             try {
                 assert dataOutputStream != null;

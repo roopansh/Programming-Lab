@@ -23,7 +23,7 @@ public class OrdersProcessor extends Thread {
         while (true) {
             if (orders.size() > 0) {
                 int count = 0;
-                while (orders.size() > 0 && count < Constants.ORDERS_THRESHHOLD) {
+                while (orders.size() > 0 && count < Constants.ORDERS_THRESHOLD) {
                     OrderProcessor order = orders.get(0);
                     orders.remove(0);
                     processingOrders.add(order);

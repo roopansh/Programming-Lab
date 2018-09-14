@@ -9,7 +9,10 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static java.lang.System.out;
@@ -21,17 +24,18 @@ public class Client {
     private DataInputStream dataInputStream = null;
     private DataOutputStream dataOutputStream = null;
     private Integer totalPrice = 0;
+
     private Client() {
         OrderItemList = new HashMap<>();
         Items = new ArrayList<>();
-        establishConnection(Constants.SERVER_ADDRESS, Constants.SERVER_PORT);
+        establishConnection();
         generateGui();
     }
 
-    private void establishConnection(String address, int port) {
+    private void establishConnection() {
         // establish a connection
         try {
-            socket = new Socket(address, port);
+            socket = new Socket(Constants.SERVER_ADDRESS, Constants.SERVER_PORT);
             out.println("Connected to server");
 
             // takes input from terminal
@@ -76,7 +80,7 @@ public class Client {
         JButton invoiceButton = new JButton("Invoice");//creating instance of JButton
         SpinnerModel spinnerNumberModel = new SpinnerNumberModel(1, //initial value
                 1, //minimum value
-                10, //maximum value
+                100, //maximum value
                 1); //step
         JSpinner quantitySpinner = new JSpinner(spinnerNumberModel);
         JList itemList = new JList(Items.toArray());
@@ -117,9 +121,7 @@ public class Client {
             JOptionPane.showMessageDialog(frame, message);
             invoiceButton.setEnabled(true);
         });
-        invoiceButton.addActionListener(actionEvent -> {
-            generateInvoice();
-        });
+        invoiceButton.addActionListener(actionEvent -> generateInvoice());
 
         orderButton.setEnabled(false);
         invoiceButton.setEnabled(false);
@@ -140,28 +142,24 @@ public class Client {
         frame.setVisible(true);//making the frame visible
     }
 
-    private void generateInvoice(){
+    private void generateInvoice() {
         JFrame frame = new JFrame(); //creating instance of JFrame
-        JLabel ShopLabel = new JLabel("Canteen");
         JLabel itemLabel = new JLabel("Customer Reciept");
-        DefaultTableModel orderDetailsTable = new DefaultTableModel(new String[]{"S.No.", "Item", "Qty","Price"}, 0);
+        DefaultTableModel orderDetailsTable = new DefaultTableModel(new String[]{"S.No.", "Item", "Qty", "Price"}, 0);
         JTable orderTable = new JTable(orderDetailsTable);
         JScrollPane orderDetails = new JScrollPane(orderTable);
-        OrderItemList.forEach( (key, value) -> orderDetailsTable.addRow(new Object[]{orderDetailsTable.getRowCount() + 1, key, value,Constants.getItemsPrice().get(key)}));
+        OrderItemList.forEach((key, value) -> orderDetailsTable.addRow(new Object[]{orderDetailsTable.getRowCount() + 1, key, value, Constants.getItemsPrice().get(key)}));
 
-        Iterator it = OrderItemList.entrySet().iterator();
-        while (it.hasNext()) {
-            Map.Entry pair = (Map.Entry)it.next();
+        for (Object o : OrderItemList.entrySet()) {
+            Map.Entry pair = (Map.Entry) o;
             totalPrice = totalPrice + (Constants.getItemsPrice().get(pair.getKey()) * Integer.parseInt(pair.getValue().toString()));
         }
-        orderDetailsTable.addRow(new Object[]{"", "", "Total Price",totalPrice});
+        orderDetailsTable.addRow(new Object[]{"", "", "Total Price", totalPrice});
 
-        ShopLabel.setBounds(50, 50, 250, 30);
         itemLabel.setBounds(50, 100, 250, 30);
         frame.setSize(600, 800);//600 width and 800 height
         orderDetails.setBounds(50, 200, 500, 200);
 
-        frame.add(ShopLabel);
         frame.add(itemLabel);
         frame.add(orderDetails);
 
@@ -169,6 +167,7 @@ public class Client {
 
         frame.setVisible(true);//making the frame visible
     }
+
     private String sendOrder() {
         // establish a connection
         try {
