@@ -2,11 +2,17 @@ package task2.distributedsystem;
 
 import java.util.ArrayList;
 
+/*
+ * Teacher class (Threads)
+ * */
 public class Teacher extends Thread {
-    private MarkEvaluationSystem markEvaluationSystem;
+    private MarkEvaluationSystem markEvaluationSystem;  // The main parent running class
     private ArrayList<ArrayList<String>> InputBuffer; // roll num, update marks by
-    private boolean Synchronize;
+    private boolean Synchronize;    // indicates if the marks need to be updated synchronously or nor
 
+    /*
+     * Constructor
+     * */
     Teacher(MarkEvaluationSystem markEvaluationSystem, String Name, int priority) {
         this.markEvaluationSystem = markEvaluationSystem;
         setName(Name);
@@ -15,6 +21,10 @@ public class Teacher extends Thread {
         Synchronize = false;
     }
 
+    /*
+     * While the teacher has input in it's buffer,
+     * keep on updating the marks
+     * */
     @Override
     public void run() {
         while (InputBuffer.size() > 0) {
@@ -27,6 +37,10 @@ public class Teacher extends Thread {
         }
     }
 
+    /*
+     * Add a new input to the buffer
+     * input contains the details about updating the marks
+     * */
     void addInputToBuffer(String rollNumber, String updateMarks) {
         ArrayList<String> newInput = new ArrayList<>();
         newInput.add(rollNumber);

@@ -10,10 +10,15 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
+/*
+ * Thread for processing individual order.
+ * Start the threads for processing individual item in the list
+ * Check if all items are available and the order can be processed
+ * */
 public class OrderProcessor extends Thread {
     private List<List<String>> order;   // List of <Item, rate, quantity, price>
     private Server server;
-    private int delay;
+    private int delay;  // Delay for processing the order
     private boolean available;
     private Socket socket;
     private LocalDateTime orderTime;

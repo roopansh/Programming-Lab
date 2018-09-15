@@ -4,6 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
 
+/* Thread containing the queue of a particular item to be processed
+ * Items added on first come first serve basis
+ * Picks the first thread, processes it and then removes it
+ * */
 class ItemsProcessor extends Thread {
     List<ItemProcessor> itemOrders;
     ReentrantLock queueLock;

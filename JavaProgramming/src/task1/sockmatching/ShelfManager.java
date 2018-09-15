@@ -1,11 +1,18 @@
 package task1.sockmatching;
 
+/*
+ * Shelf Manager recieves a sock pair and puts it in the right shelf
+ * */
 class ShelfManager {
+    // Count of socks represents the different shelves
     private Integer WhiteSocks;
     private Integer BlackSocks;
     private Integer BlueSocks;
     private Integer GreySocks;
 
+    /*
+     * Constructor
+     * */
     ShelfManager() {
         WhiteSocks = 0;
         BlackSocks = 0;
@@ -37,7 +44,8 @@ class ShelfManager {
         }
     }
 
-    public void PrintShelves() {
+    // Print the collected socks finally when the program ends.
+    void PrintShelves() {
         System.out.println(String.format("White: %d\tblack: %d\tblue: %d\tgrey: %d", WhiteSocks, BlackSocks, BlueSocks, GreySocks));
     }
 }

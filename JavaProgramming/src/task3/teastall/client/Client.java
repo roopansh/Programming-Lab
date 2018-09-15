@@ -18,14 +18,20 @@ import java.util.concurrent.TimeUnit;
 
 import static java.lang.System.out;
 
+/*
+ * Client side of the Tea Stall
+ * */
 public class Client {
-    private Map<String, Integer> OrderItemList;
-    private List<String> Items;
-    private Socket socket = null;
+    private Map<String, Integer> OrderItemList; // List of items added to the order list
+    private List<String> Items; // list of all the items available in the stall
+    private Socket socket = null;   // Socket for communicating with the server
     private DataInputStream dataInputStream = null;
     private DataOutputStream dataOutputStream = null;
     private Integer totalPrice = 0;
 
+    /*
+     * Constructor
+     * */
     private Client() {
         OrderItemList = new HashMap<>();
         Items = new ArrayList<>();
@@ -33,30 +39,31 @@ public class Client {
         generateGui();
     }
 
+    /*
+     * Establish initial connection to the server
+     * Get the list of all the items in the stall
+     * */
     private void establishConnection() {
-        // establish a connection
+        // establish a connection to the server
         try {
             socket = new Socket(Constants.SERVER_ADDRESS, Constants.SERVER_PORT);
-            out.println("Connected to server");
-
-            // takes input from terminal
             dataInputStream = new DataInputStream(socket.getInputStream());
             dataOutputStream = new DataOutputStream(socket.getOutputStream());
         } catch (IOException i) {
             System.out.println(i.toString());
         }
 
-        // string to read message from input
-        String line = "";
-
+        // Send command to get a list of all the items in the stall from the server
         try {
             dataOutputStream.writeUTF(Constants.GET_AVAILABLE_LIST);
         } catch (IOException e) {
             System.out.println(e.toString());
         }
 
-        // keep reading until "End" is input
-        while (!line.equals(Constants.MESSAGE_END)) {
+        // Get list of all the items in the stall
+        // save the list
+        String line = "";
+        while (!line.equals(Constants.MESSAGE_END)) {        // keep reading until "End" is input
             try {
                 this.Items.add(line);
                 line = dataInputStream.readUTF();
@@ -71,9 +78,11 @@ public class Client {
         }
     }
 
+    /*
+     * Generate the GUI of the client side
+     * */
     private void generateGui() {
         JFrame frame = new JFrame(); //creating instance of JFrame
-
         JLabel customerNameLabel = new JLabel("Enter Your Name");
         JTextField customerName = new JTextField();
         JLabel itemLabel = new JLabel("Select the item to order");
@@ -158,6 +167,9 @@ public class Client {
         frame.setVisible(true);//making the frame visible
     }
 
+    /*
+     * Generates the invoice for the current order
+     * */
     private void generateInvoice() {
         JFrame frame = new JFrame();
         frame.setTitle("Customer Reciept");
@@ -178,6 +190,9 @@ public class Client {
         frame.setVisible(true);//making the frame visible
     }
 
+    /*
+     * Send a order to the server
+     * */
     private String sendOrder(String customerName) {
         // establish a connection
         try {
@@ -190,6 +205,7 @@ public class Client {
             System.out.println(i.toString());
         }
 
+        // send the command to place the order along with the customer name
         try {
             dataOutputStream.writeUTF(Constants.PLACE_ORDER);
             dataOutputStream.writeUTF(customerName);
@@ -212,6 +228,7 @@ public class Client {
             System.out.println(e.toString());
         }
 
+        // Wait for the response from the server
         try {
             TimeUnit.SECONDS.sleep(1);
         } catch (InterruptedException e) {
@@ -233,6 +250,9 @@ public class Client {
         return line;
     }
 
+    /*
+     * The main function
+     * */
     public static void main(String[] args) {
         new Client();
     }

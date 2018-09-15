@@ -17,15 +17,118 @@ colour and pass the pair of socks to a shelf manager robot. The shelf manager ro
 the pair of socks to the appropriate shelf.
 **/
 public class SockMatching {
-    private int NumberOfRobots;
-    private final List<Integer> Socks;
-    private List<Robot> Robots;
-    private MatchingMachine matchingMachine;
-    private ShelfManager shelfManager;
-    private List<Semaphore> SemLocks;
-    private Random rand = new Random();
+    private int NumberOfRobots; // Number of robot arms
+    private final List<Integer> Socks;  // Socks buffer
+    private List<Robot> Robots; // List of Robot Threads
+    private MatchingMachine matchingMachine;    // Sock matcher
+    private ShelfManager shelfManager;  // Shelf manager
+    private List<Semaphore> SemLocks;   // Semaphore locks for the socks
+    private Random rand = new Random(); // random generator
 
+    /*
+     * Start the robots and wait for each robot to terminate.
+     * Print the final socks shelves count at the end.
+     * */
+    private void startMachine() throws InterruptedException {
+        // Activate all the robot arms
+        for (Robot robot : Robots) {
+            robot.start();
+        }
+
+        // wait for all robotarms to stop
+        for (Robot robot : Robots) {
+            robot.join();
+        }
+
+        // Print the collected socks count
+        shelfManager.PrintShelves();
+    }
+
+    /*
+     * Create semaphores for each sock.
+     * */
+    private void createSockLocks() {
+        SemLocks = new ArrayList<>();
+        for (int i = 0; i < Socks.size(); i++) {
+            Semaphore SemLock = new Semaphore(1);
+            SemLocks.add(SemLock);
+        }
+    }
+
+    /*
+     * Create the required number of robot arms
+     * */
+    private void createRobotArms() {
+        Robots = new ArrayList<>();
+        for (int i = 0; i < NumberOfRobots; i++) {
+            Robot robot = new Robot(this, this.matchingMachine, i);
+            Robots.add(robot);
+        }
+    }
+
+    /*
+     * Constructor
+     * */
+    private SockMatching(int numberOfRobots, List<Integer> socks) {
+        NumberOfRobots = numberOfRobots;
+        Socks = socks;
+
+        // Create Shelf manager
+        shelfManager = new ShelfManager();
+
+        // Create matching machine
+        matchingMachine = new MatchingMachine(shelfManager);
+
+        // Create robotic arms
+        createRobotArms();
+
+        // Create locks
+        createSockLocks();
+    }
+
+    /*
+     * Pick a sock
+     * If no sock is left, return NULL_SOCK
+     * */
+    int PickSock() {
+        int sock;
+        int n = -1;
+        boolean flag = false;
+
+        // Generate a random number and lock that sock
+        synchronized (Socks) {
+            if (Socks.size() > 0) {
+                n = rand.nextInt(Socks.size());
+            } else {
+                flag = true;
+            }
+        }
+
+        // If no sock is left to return
+        if (flag) {
+            return Constants.NULL_SOCK;
+        }
+        boolean success = SemLocks.get(n).tryAcquire();
+
+        // Lock the sock and return the locked object
+        // Release the lock so that it can be acquired by some other thread
+        if (success && n < Socks.size()) {
+            synchronized (Socks) {
+                sock = Socks.get(n);
+                Socks.remove(n);
+            }
+            SemLocks.get(n).release();
+            return sock;
+        } else {
+            return PickSock();
+        }
+    }
+
+    /*
+     * The main function to run the Sock matching machine
+     * */
     public static void main(String[] args) throws IOException, InterruptedException {
+        // File to take input from
         File file = new File(Constants.INPUT_FILE);
         Scanner scanner = new Scanner(file);
 
@@ -45,76 +148,5 @@ public class SockMatching {
         sockMatching.startMachine();
     }
 
-    private void startMachine() throws InterruptedException {
-        // Activate all the robot arms
-        for (Robot robot : Robots) {
-            robot.start();
-        }
 
-        // wait for all robotarms to stop
-        for (Robot robot : Robots) {
-            robot.join();
-        }
-        shelfManager.PrintShelves();
-    }
-
-    private void createSockLocks() {
-        SemLocks = new ArrayList<>();
-        for (int i = 0; i < Socks.size(); i++) {
-            Semaphore SemLock = new Semaphore(1);
-            SemLocks.add(SemLock);
-        }
-    }
-
-    private void createRobotArms() {
-        Robots = new ArrayList<>();
-        for (int i = 0; i < NumberOfRobots; i++) {
-            Robot robot = new Robot(this, this.matchingMachine, i);
-            Robots.add(robot);
-        }
-    }
-
-    private SockMatching(int numberOfRobots, List<Integer> socks) {
-        NumberOfRobots = numberOfRobots;
-        Socks = socks;
-
-        // Create Shelf manager
-        shelfManager = new ShelfManager();
-
-        // Create matching machine
-        matchingMachine = new MatchingMachine(shelfManager);
-
-        // Create robotic arms
-        createRobotArms();
-
-        // Create locks
-        createSockLocks();
-    }
-
-    int PickSock() {
-        int sock;
-        int n = -1;
-        boolean flag = false;
-        synchronized (Socks) {
-            if (Socks.size() > 0) {
-                n = rand.nextInt(Socks.size());
-            } else {
-                flag = true;
-            }
-        }
-        if (flag) {
-            return -1;
-        }
-        boolean success = SemLocks.get(n).tryAcquire();
-        if (success && n < Socks.size()) {
-            synchronized (Socks) {
-                sock = Socks.get(n);
-                Socks.remove(n);
-            }
-            SemLocks.get(n).release();
-            return sock;
-        } else {
-            return PickSock();
-        }
-    }
 }
