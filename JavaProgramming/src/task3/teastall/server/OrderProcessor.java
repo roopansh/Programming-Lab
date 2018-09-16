@@ -19,11 +19,14 @@ public class OrderProcessor extends Thread {
     private List<List<String>> order;   // List of <Item, rate, quantity, price>
     private Server server;
     private int delay;  // Delay for processing the order
-    private boolean available;
+    private boolean available; // flag denoting the availability of an item
     private Socket socket;
     private LocalDateTime orderTime;
     private String customerName;
 
+    /*
+     * Constructor
+     * */
     OrderProcessor(Server server, List<List<String>> order, LocalDateTime orderTime, String customerName, Socket socket) {
         this.order = order;
         this.server = server;
@@ -39,14 +42,15 @@ public class OrderProcessor extends Thread {
         // Create thread for all the items and wait on them
         ItemProcessor[] itemProcessors = new ItemProcessor[order.size()];
         int count = 0;
+        // counter of the countdownlatch is initialized to the number of items in the order and each item countdowns when it is processed
         CountDownLatch latch = new CountDownLatch(order.size());
 
         for (List<String> itemDetails : order) {
             String item = itemDetails.get(0);
             int quantity = Integer.parseInt(itemDetails.get(2));
             itemProcessors[count] = new ItemProcessor(server, item, quantity, latch);
-            // aquire lock the item list and then add to the queueu
 
+            // acquire lock the on item list and then add to the queue
             ItemsProcessor itemsProcessor = server.getItemsProcessorMap().get(item);
             itemsProcessor.queueLock.lock();
             itemsProcessor.itemOrders.add(itemProcessors[count]);
@@ -57,15 +61,17 @@ public class OrderProcessor extends Thread {
 
         try {
             latch.await();
+            // waiting till all the items of the order are processed
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
 
+        // calculating delay after each item of the order is processed
         for (ItemProcessor itemProcessor : itemProcessors) {
-            int d = itemProcessor.getDelay();
+            int d = itemProcessor.getDelay(); // delay time for an item of the order
             // check if the order can be fulfilled or not
-            if (d < 0) available = false;
-            if (delay < d) delay = d;
+            if (d < 0) available = false; // item cannot be processed due to stock unavailability
+            if (delay < d) delay = d; // updating the delay time if an item requires much delay then the other items
         }
     }
 
@@ -76,6 +82,7 @@ public class OrderProcessor extends Thread {
     private boolean isAvailable() {
         return available;
     }
+
 
     LocalDateTime sendResult(LocalDateTime timeStamp) {
         if (orderTime.isAfter(timeStamp)) {

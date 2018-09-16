@@ -129,6 +129,7 @@ public class Client {
         });
 
         clearButton.addActionListener(actionEvent -> {
+            totalPrice = 0;
             OrderItemList.clear();
             orderDetailsTable.setRowCount(0);
             orderButton.setEnabled(false);

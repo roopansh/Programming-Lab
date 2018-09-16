@@ -17,7 +17,9 @@ import java.util.*;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-
+/*
+ * server side of the Tea Stall
+ * */
 public class Server extends Thread {
     private Map<String, Integer> Items; // Item, Stock
     private Map<String, Integer> ItemDelay; // item, total delay
@@ -26,16 +28,16 @@ public class Server extends Thread {
     /*
      * <Date, Name>  --->  List of <Item, rate, quantity, price>
      * */
-    private Map<Pair<String, String>, List<List<String>>> ordersRecords = new HashMap<>();
+    private Map<Pair<String, String>, List<List<String>>> ordersRecords = new HashMap<>(); // hashmap contains pair of date,name mapped to list of items included in his/her order
     private OrdersProcessor ordersProcessor;
     private Map<String, ItemsProcessor> itemsProcessorMap;
 
     private Server() {
 
-        Items = Constants.getInitialItems();
-        ItemDelay = Constants.getInitialItemsDelay();
+        Items = Constants.getInitialItems(); // initial stock of each item
+        ItemDelay = Constants.getInitialItemsDelay(); // processing time required for a particular item
         itemsProcessorMap = new HashMap<>();
-        ordersProcessor = new OrdersProcessor();
+        ordersProcessor = new OrdersProcessor(); // thread for processing the received orders
         for (String item : Items.keySet()) {
             itemsProcessorMap.put(item, new ItemsProcessor());
         }
@@ -43,8 +45,11 @@ public class Server extends Thread {
         start();
     }
 
+    /*
+     * Generate the GUI of the server side
+     * */
     private void generateGui() {
-        JFrame frame = new JFrame();
+        JFrame frame = new JFrame(); //creating instance of JFrame
         JPanel p1 = new JPanel(new BorderLayout());
         JPanel p2 = new JPanel(new BorderLayout());
         JPanel p3 = new JPanel(new BorderLayout());
@@ -96,15 +101,18 @@ public class Server extends Thread {
         frame.add(datePanel, BorderLayout.PAGE_START);
         frame.add(tp, BorderLayout.CENTER);
         frame.add(refresh, BorderLayout.PAGE_END);
-        frame.setVisible(true);
+        frame.setVisible(true); //making the frame visible
     }
 
+
     private void refreshAction(DefaultTableModel orderDetailsTable, DefaultTableModel stockDetailsTable, DefaultTableModel purchaseListTable, JSpinner fromDateInput, JSpinner toDateInput) {
+        //clear the items added to order on clicking the refresh button
         orderDetailsTable.setRowCount(0);
         AtomicInteger orderCount = new AtomicInteger();
         final Date fromDate = (Date) fromDateInput.getValue();
         final Date toDate = (Date) toDateInput.getValue();
 
+        // displaying all the orders received (fromdate to todate)
         ordersRecords.forEach((date_name, items) -> {
             LocalDateTime orderDateTime = LocalDateTime.parse(date_name.getKey(), Constants.DATE_TIME_FORMATTER);
             if (fromDate.toInstant().isBefore(orderDateTime.atZone(ZoneId.systemDefault()).toInstant()) && toDate.toInstant().isAfter(orderDateTime.atZone(ZoneId.systemDefault()).toInstant())) {
@@ -118,6 +126,7 @@ public class Server extends Thread {
                 orderDetailsTable.addRow(new Object[]{"", "", "", "", "", "", ""});
             }
         });
+        //update the stock table showing the availability of the items on clicking the refresh button
         stockDetailsTable.setRowCount(0);
         Items.forEach((item, stock) -> {
             if (!item.equals(Constants.TEA) && !item.equals(Constants.COFFEE)) {
@@ -125,6 +134,7 @@ public class Server extends Thread {
             }
         });
 
+        // update the list containing items required to purchase on clicking the refresh button
         purchaseListTable.setRowCount(0);
         Items.forEach((item, stock) -> {
             if (!item.equals(Constants.TEA) && !item.equals(Constants.COFFEE) && stock < Constants.getThresholdValues().get(item)) {
@@ -135,7 +145,10 @@ public class Server extends Thread {
 
     @Override
     public void run() {
+        // start the thread to process the received orders
         ordersProcessor.start();
+
+        // start the thread of each item's processing queue
         for (ItemsProcessor itemsProcessor : itemsProcessorMap.values()) {
             itemsProcessor.start();
         }
@@ -169,6 +182,8 @@ public class Server extends Thread {
                     Integer quantity, rate;
                     List<List<String>> order = new ArrayList<>();
                     line = dataInputStream.readUTF();
+
+
                     while (!line.equals(Constants.MESSAGE_END)) {
                         try {
                             item = line;
